@@ -6,7 +6,7 @@ The idea is you can write your game in any language you like, and load it in a s
 
 ```
 cmake -B build .
-make -C build
+cmake --build build
 
 # build a demo cart in build/tester.pntr
 ./tools/cart_as carts/tester.ts

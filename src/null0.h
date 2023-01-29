@@ -56,6 +56,54 @@ bool FileExistsInPhysFS(const char* fileName) {
   return stat.filetype == PHYSFS_FILETYPE_REGULAR;
 }
 
+unsigned char* LoadFileDataFromPhysFS(const char* fileName, unsigned int* bytesRead) {
+  if (!FileExistsInPhysFS(fileName)) {
+    fprintf(stderr, "file: Tried to load non-existing file '%s'\n", fileName);
+    bytesRead = 0;
+    return 0;
+  }
+
+  // Open up the file.
+  void* handle = PHYSFS_openRead(fileName);
+  if (handle == 0) {
+    fprintf(stderr, "file: Could not open file '%s'\n", fileName);
+    bytesRead = 0;
+    return 0;
+  }
+
+  // Check to see how large the file is.
+  int size = PHYSFS_fileLength(handle);
+  if (size == -1) {
+    bytesRead = 0;
+    PHYSFS_close(handle);
+    fprintf(stderr, "file: Cannot determine size of file '%s'\n", fileName);
+    return 0;
+  }
+
+  // Close safely when it's empty.
+  if (size == 0) {
+    PHYSFS_close(handle);
+    bytesRead = 0;
+    return 0;
+  }
+
+  // Read the file, return if it's empty.
+  void* buffer = malloc(size);
+  int read = PHYSFS_readBytes(handle, buffer, size);
+  if (read < 0) {
+    bytesRead = 0;
+    free(buffer);
+    PHYSFS_close(handle);
+    fprintf(stderr, "file: Cannot read bytes '%s'\n", fileName);
+    return 0;
+  }
+
+  // Close the file handle, and return the bytes read and the buffer.
+  PHYSFS_close(handle);
+  *bytesRead = read;
+  return buffer;
+}
+
 // Log a string
 static m3ApiRawFunction(null0_log) {
   m3ApiGetArgMem(const char*, message);
@@ -76,6 +124,7 @@ static m3ApiRawFunction(null0_fatal) {
 // Clear screen with a color: v(*)
 static m3ApiRawFunction(null0_clear_screen) {
   m3ApiGetArgMem(pntr_color_t*, color);
+
   pntr_image* c = pntr_gen_image_color(320, 240, *color);
   pntr_draw_image(canvas, c, 0, 0);
   pntr_unload_image(c);
@@ -85,10 +134,15 @@ static m3ApiRawFunction(null0_clear_screen) {
 
 // Draw an image: v(*ii)
 static m3ApiRawFunction(null0_draw_image) {
-  m3ApiGetArgMem(Null0Image*, image);
-  m3ApiGetArg(int, x);
-  m3ApiGetArg(int, y);
-  pntr_image* pimage = allImages[image->id];
+  m3ApiGetArg(u8, i);
+  m3ApiGetArg(i32, x);
+  m3ApiGetArg(i32, y);
+
+  // 0 id is current screen, used for other stuff (no drawing screen onto screen)
+  if (i != 0) {
+    pntr_draw_image(canvas, allImages[i], x, y);
+  }
+
   m3ApiSuccess();
 }
 
@@ -97,7 +151,9 @@ static m3ApiRawFunction(null0_draw_pixel) {
   m3ApiGetArg(int, x);
   m3ApiGetArg(int, y);
   m3ApiGetArgMem(pntr_color_t*, color);
+
   pntr_draw_pixel(canvas, x, y, *color);
+
   m3ApiSuccess();
 }
 
@@ -108,21 +164,28 @@ static m3ApiRawFunction(null0_draw_rectangle) {
   m3ApiGetArg(int, height);
   m3ApiGetArg(int, width);
   m3ApiGetArgMem(pntr_color_t*, color);
+
   pntr_draw_rectangle(canvas, x, y, height, width, *color);
+
   m3ApiSuccess();
 }
 
-// Load an image: *(*)
+// Load an image: i(*)
 static m3ApiRawFunction(null0_load_image) {
-  m3ApiReturnType(Null0Image*);
+  m3ApiReturnType(u8);
   m3ApiGetArgMem(const char*, fileName);
-  Null0Image* image;
-  allImages[currentImage++] = pntr_load_image(fileName);
-  image->id = currentImage;
-  image->width = allImages[image->id]->width;
-  image->height = allImages[image->id]->height;
 
-  m3ApiReturn(image);
+  unsigned int bytesRead = 0;
+  unsigned char* fileData = LoadFileDataFromPhysFS(fileName, &bytesRead);
+  printf("Loaded %s: %d\n", fileName, bytesRead);
+
+  if (bytesRead != 0) {
+    currentImage++;
+    allImages[currentImage] = pntr_load_image_from_memory(fileData, bytesRead);
+    // allImages[currentImage] = pntr_load_image("carts/image.png");
+  }
+
+  m3ApiReturn(currentImage);
   m3ApiSuccess();
 }
 
@@ -236,7 +299,7 @@ int null0_load_cart_wasm(char* filename, u8* wasmBuffer, u32 byteLength) {
   m3_LinkRawFunction(module, "env", "null0_draw_image", "v(*ii)", &null0_draw_image);
   m3_LinkRawFunction(module, "env", "null0_draw_pixel", "v(ii*)", &null0_draw_pixel);
   m3_LinkRawFunction(module, "env", "null0_draw_rectangle", "v(iiii*)", &null0_draw_rectangle);
-  m3_LinkRawFunction(module, "env", "null0_load_image", "*(*)", &null0_load_image);
+  m3_LinkRawFunction(module, "env", "null0_load_image", "i(*)", &null0_load_image);
 
   null0_check_wasm3_is_ok();
 
@@ -249,6 +312,7 @@ int null0_load_cart_wasm(char* filename, u8* wasmBuffer, u32 byteLength) {
 
   clock_gettime(CLOCK_MONOTONIC_RAW, &startTime);
   canvas = pntr_gen_image_color(320, 240, PNTR_BLACK);
+  allImages[0] = canvas;
 
   if (cart_load) {
     null0_check_wasm3(m3_CallV(cart_load));

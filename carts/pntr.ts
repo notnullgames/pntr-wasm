@@ -8,13 +8,6 @@ export class Color {
   a: u8
 }
 
-@unmanaged
-export class Image {
-  id: u8
-  height: u8
-  width: u8
-}
-
 export const LIGHTGRAY :Color = { r: 200, g: 200, b: 200, a: 255 }
 export const GRAY      :Color = { r: 130, g: 130, b: 130, a: 255 }
 export const DARKGRAY  :Color = { r: 80,  g:  80, b:  80, a: 255 }
@@ -59,8 +52,8 @@ export function fatal(message: string, filename: string, lineNumber: i32, column
 
 // Load an image
 @external("env", "null0_load_image")
-declare function _load_image(filename: ArrayBuffer): Image
-export function load_image(filename: string): Image {
+declare function _load_image(filename: ArrayBuffer): u8
+export function load_image(filename: string): u8 {
   return _load_image(String.UTF8.encode(filename, true))
 }
 
@@ -74,7 +67,7 @@ export declare function draw_pixel(x:i32, y:i32, color:Color): void
 
 // Draw an image on the screen
 @external("env", "null0_draw_image")
-export declare function draw_image(image: Image, x:i32, y:i32): void
+export declare function draw_image(image: u8, x:i32, y:i32): void
 
 // Clear the screen with a color
 @external("env", "null0_clear_screen")
