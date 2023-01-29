@@ -3,9 +3,18 @@
 #include "null0.h"
 
 #include <SDL.h>
-#include <stdbool.h>
 
-int main() {
+int main(int argc, char** argv) {
+  if (argc != 2) {
+    fprintf(stderr, "Usage: %s <CART>\n", argv[0]);
+    return 1;
+  }
+
+  int status = null0_load_cart(argv[1]);
+
+  /*
+
+
   // Create an image to display
   pntr_image* canvas = pntr_gen_image_color(400, 225, PNTR_RAYWHITE);
   pntr_draw_rectangle(canvas, 10, 10, 80, 200, PNTR_RED);
@@ -53,4 +62,8 @@ int main() {
 
   SDL_DestroyWindow(window);
   SDL_Quit();
+
+  */
+
+  return 0;
 }
