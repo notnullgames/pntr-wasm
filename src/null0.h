@@ -102,7 +102,7 @@ static void null0_check_wasm3_is_ok() {
   }
 }
 
-// given a filename and some bytes (at least 4) this will tell you what type the cart is
+// given a filename and some bytes (at least 4) this will tell you what type the cart is (dir/wasm/zip/invalid)
 enum Null0CartType null0_get_cart_type(char* filename, u8* bytes, u32 byteLength) {
   DIR* dirptr;
   if (access(filename, F_OK) != -1) {
@@ -121,7 +121,6 @@ enum Null0CartType null0_get_cart_type(char* filename, u8* bytes, u32 byteLength
   } else {
     return Null0CartTypeInvalid;
   }
-  return Null0CartTypeInvalid;
 }
 
 // run this in your game-loop
