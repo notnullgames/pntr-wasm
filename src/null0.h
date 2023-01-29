@@ -30,7 +30,6 @@ enum Null0CartType {
 };
 
 struct Null0Image {
-  uint8_t id;
   uint8_t height;
   uint8_t width;
 };
@@ -121,56 +120,64 @@ static m3ApiRawFunction(null0_fatal) {
   exit(1);
 }
 
-// Clear screen with a color: v(*)
 static m3ApiRawFunction(null0_clear_screen) {
+  m3ApiGetArg(u8, destination);
   m3ApiGetArgMem(pntr_color_t*, color);
 
   pntr_image* c = pntr_gen_image_color(320, 240, *color);
-  pntr_draw_image(canvas, c, 0, 0);
+  pntr_draw_image(allImages[destination], c, 0, 0);
   pntr_unload_image(c);
 
   m3ApiSuccess();
 }
 
-// Draw an image: v(*ii)
+static m3ApiRawFunction(null0_gen_image_color) {
+  m3ApiReturnType(u8);
+  m3ApiGetArg(u8, width);
+  m3ApiGetArg(u8, height);
+  m3ApiGetArgMem(pntr_color_t*, color);
+
+  allImages[currentImage++] = pntr_gen_image_color(width, height, *color);
+
+  m3ApiReturn(currentImage);
+  m3ApiSuccess();
+}
+
 static m3ApiRawFunction(null0_draw_image) {
+  m3ApiGetArg(u8, destination);
   m3ApiGetArg(u8, i);
   m3ApiGetArg(i32, x);
   m3ApiGetArg(i32, y);
 
-  // 0 id is current screen, used for other stuff (no drawing screen onto screen)
-  if (i != 0) {
-    pntr_draw_image(canvas, allImages[i], x, y);
-  }
+  pntr_draw_image(allImages[destination], allImages[i], x, y);
 
   m3ApiSuccess();
 }
 
-// Draw a pixel: v(ii*)
 static m3ApiRawFunction(null0_draw_pixel) {
+  m3ApiGetArg(u8, destination);
   m3ApiGetArg(int, x);
   m3ApiGetArg(int, y);
   m3ApiGetArgMem(pntr_color_t*, color);
 
-  pntr_draw_pixel(canvas, x, y, *color);
+  pntr_draw_pixel(allImages[destination], x, y, *color);
 
   m3ApiSuccess();
 }
 
-// Draw a rectangle: v(iiii*)
 static m3ApiRawFunction(null0_draw_rectangle) {
+  m3ApiGetArg(u8, destination);
   m3ApiGetArg(int, x);
   m3ApiGetArg(int, y);
   m3ApiGetArg(int, height);
   m3ApiGetArg(int, width);
   m3ApiGetArgMem(pntr_color_t*, color);
 
-  pntr_draw_rectangle(canvas, x, y, height, width, *color);
+  pntr_draw_rectangle(allImages[destination], x, y, height, width, *color);
 
   m3ApiSuccess();
 }
 
-// Load an image: i(*)
 static m3ApiRawFunction(null0_load_image) {
   m3ApiReturnType(u8);
   m3ApiGetArgMem(const char*, fileName);
@@ -179,10 +186,9 @@ static m3ApiRawFunction(null0_load_image) {
   unsigned char* fileData = LoadFileDataFromPhysFS(fileName, &bytesRead);
   printf("Loaded %s: %d\n", fileName, bytesRead);
 
-  if (bytesRead != 0) {
+  if (bytesRead) {
     currentImage++;
     allImages[currentImage] = pntr_load_image_from_memory(fileData, bytesRead);
-    // allImages[currentImage] = pntr_load_image("carts/image.png");
   }
 
   m3ApiReturn(currentImage);
@@ -295,11 +301,12 @@ int null0_load_cart_wasm(char* filename, u8* wasmBuffer, u32 byteLength) {
   m3_LinkRawFunction(module, "env", "null0_log", "v(*)", &null0_log);
   m3_LinkRawFunction(module, "env", "null0_fatal", "v(**ii)", &null0_fatal);
 
-  m3_LinkRawFunction(module, "env", "null0_clear_screen", "v(*)", &null0_clear_screen);
-  m3_LinkRawFunction(module, "env", "null0_draw_image", "v(*ii)", &null0_draw_image);
-  m3_LinkRawFunction(module, "env", "null0_draw_pixel", "v(ii*)", &null0_draw_pixel);
-  m3_LinkRawFunction(module, "env", "null0_draw_rectangle", "v(iiii*)", &null0_draw_rectangle);
+  m3_LinkRawFunction(module, "env", "null0_clear_screen", "v(i*)", &null0_clear_screen);
+  m3_LinkRawFunction(module, "env", "null0_draw_image", "v(i*ii)", &null0_draw_image);
+  m3_LinkRawFunction(module, "env", "null0_draw_pixel", "v(iii*)", &null0_draw_pixel);
+  m3_LinkRawFunction(module, "env", "null0_draw_rectangle", "v(iiiii*)", &null0_draw_rectangle);
   m3_LinkRawFunction(module, "env", "null0_load_image", "i(*)", &null0_load_image);
+  m3_LinkRawFunction(module, "env", "null0_gen_image_color", "i(iii*)", &null0_gen_image_color);
 
   null0_check_wasm3_is_ok();
 

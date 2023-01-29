@@ -57,19 +57,36 @@ export function load_image(filename: string): u8 {
   return _load_image(String.UTF8.encode(filename, true))
 }
 
-// Draw a rectangle on the screen
+// Draw an rectangle on an image
 @external("env", "null0_draw_rectangle")
-export declare function draw_rectangle(x:i32, y:i32, width:i32, height:i32, color:Color): void
+export declare function draw_rectangle_on_image(destination: u8, x:i32, y:i32, width:i32, height:i32, color:Color): void
+export function draw_rectangle(x:i32, y:i32, width:i32, height:i32, color:Color): void {
+  return draw_rectangle_on_image(0, x, y, width, height, color)
+}
 
-// Draw a pixel on the screen
+// Draw a pixel on an image
 @external("env", "null0_draw_pixel")
-export declare function draw_pixel(x:i32, y:i32, color:Color): void
+export declare function draw_pixel_on_image(destination: u8, x:i32, y:i32, color:Color): void
+export function draw_pixel(x:i32, y:i32, color:Color): void {
+  return draw_pixel_on_image(0, x, y, color)
+}
 
 // Draw an image on the screen
 @external("env", "null0_draw_image")
-export declare function draw_image(image: u8, x:i32, y:i32): void
+export declare function draw_image_on_image(destination: u8, source: u8, x:i32, y:i32): void
+export function draw_image(source: u8, x:i32, y:i32): void {
+  return draw_image_on_image(0, source, x, y)
+}
 
-// Clear the screen with a color
+// Clear an image with a color
 @external("env", "null0_clear_screen")
-export declare function clear_screen(color:Color): void
+export declare function clear_screen_on_image(destination: u8, color:Color): void
+export function clear_screen(color:Color): void {
+  return clear_screen_on_image(0, color)
+}
+
+// Generate an image with a single color
+@external("env", "null0_gen_image_color")
+export declare function gen_image_color(width:u8, height: u8, color:Color): u8
+
 

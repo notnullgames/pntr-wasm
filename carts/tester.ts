@@ -15,8 +15,6 @@ export function update(dt:u64): void {
   draw_rectangle(100, 10, 80, 200, GREEN)
   draw_rectangle(200, 10, 80, 200, BLUE)
   draw_pixel(20, 20, BLUE)
-  
-  // this segfaults
   draw_image(image, 150, 50)
 }
 
