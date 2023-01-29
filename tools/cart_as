@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+# This will build an assemblyscript-based cart
+# TODO: rewrite this in js? Might be nicer for cross-platform
+
+set -e
+
+DIR="$( dirname -- "${BASH_SOURCE[0]}"; )"
+
+CARTNAME=$(basename "$1" .ts)
+
+npx -y --package=assemblyscript -c "asc --use abort=fatal --lib '${DIR}/../carts/pntr.ts' --runtime stub --exportRuntime --optimize --stats --bindings esm '${1}' -t 'build/${CARTNAME}.wat' -o 'build/${CARTNAME}.wasm'"
+
+mkdir -p "build/${CARTNAME}"
+cd "build/${CARTNAME}"
+cp "../${CARTNAME}.wasm" main.wasm
+cp ../../carts/image.png .
+zip -r "../${CARTNAME}.pntr" .
+
+
+echo ${CARTNAME} built.
+du -h "../${CARTNAME}.pntr"
