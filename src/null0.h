@@ -127,7 +127,7 @@ enum Null0CartType null0_get_cart_type(char* filename, u8* bytes, u32 byteLength
 // run this in your game-loop
 void null0_update_cart() {
   clock_gettime(CLOCK_MONOTONIC_RAW, &nowTime);
-  uint64_t delta = (nowTime.tv_sec - startTime.tv_sec) * 1000000 + (nowTime.tv_nsec - startTime.tv_nsec) / 1000;
+  uint64_t delta = ((nowTime.tv_sec - startTime.tv_sec) * 1000000) + ((nowTime.tv_nsec - startTime.tv_nsec) / 1000);
   if (cart_update) {
     null0_check_wasm3(m3_CallV(cart_update, delta));
   }
