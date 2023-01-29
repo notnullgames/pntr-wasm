@@ -2,9 +2,9 @@
 
 @unmanaged
 export class Color {
-  r: u8
-  g: u8
   b: u8
+  g: u8
+  r: u8
   a: u8
 }
 
@@ -75,4 +75,8 @@ export declare function draw_pixel(x:i32, y:i32, color:Color): void
 // Draw an image on the screen
 @external("env", "null0_draw_image")
 export declare function draw_image(image: Image, x:i32, y:i32): void
+
+// Clear the screen with a color
+@external("env", "null0_clear_screen")
+export declare function clear_screen(color:Color): void
 

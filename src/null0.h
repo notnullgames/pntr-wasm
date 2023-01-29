@@ -41,8 +41,12 @@ static M3Runtime* runtime;
 static M3Module* module;
 static M3Function* cart_load;
 static M3Function* cart_update;
+static M3Function* cart_unload;
 struct timespec startTime;
 struct timespec nowTime;
+pntr_image* canvas;
+u8 currentImage = 0;
+pntr_image* allImages[255];
 
 bool FileExistsInPhysFS(const char* fileName) {
   PHYSFS_Stat stat;
@@ -69,16 +73,56 @@ static m3ApiRawFunction(null0_fatal) {
   exit(1);
 }
 
+// Clear screen with a color: v(*)
+static m3ApiRawFunction(null0_clear_screen) {
+  m3ApiGetArgMem(pntr_color_t*, color);
+  pntr_image* c = pntr_gen_image_color(320, 240, *color);
+  pntr_draw_image(canvas, c, 0, 0);
+  pntr_unload_image(c);
+
+  m3ApiSuccess();
+}
+
+// Draw an image: v(*ii)
 static m3ApiRawFunction(null0_draw_image) {
+  m3ApiGetArgMem(Null0Image*, image);
+  m3ApiGetArg(int, x);
+  m3ApiGetArg(int, y);
+  pntr_image* pimage = allImages[image->id];
   m3ApiSuccess();
 }
+
+// Draw a pixel: v(ii*)
 static m3ApiRawFunction(null0_draw_pixel) {
+  m3ApiGetArg(int, x);
+  m3ApiGetArg(int, y);
+  m3ApiGetArgMem(pntr_color_t*, color);
+  pntr_draw_pixel(canvas, x, y, *color);
   m3ApiSuccess();
 }
+
+// Draw a rectangle: v(iiii*)
 static m3ApiRawFunction(null0_draw_rectangle) {
+  m3ApiGetArg(int, x);
+  m3ApiGetArg(int, y);
+  m3ApiGetArg(int, height);
+  m3ApiGetArg(int, width);
+  m3ApiGetArgMem(pntr_color_t*, color);
+  pntr_draw_rectangle(canvas, x, y, height, width, *color);
   m3ApiSuccess();
 }
+
+// Load an image: *(*)
 static m3ApiRawFunction(null0_load_image) {
+  m3ApiReturnType(Null0Image*);
+  m3ApiGetArgMem(const char*, fileName);
+  Null0Image* image;
+  allImages[currentImage++] = pntr_load_image(fileName);
+  image->id = currentImage;
+  image->width = allImages[image->id]->width;
+  image->height = allImages[image->id]->height;
+
+  m3ApiReturn(image);
   m3ApiSuccess();
 }
 
@@ -125,12 +169,20 @@ enum Null0CartType null0_get_cart_type(char* filename, u8* bytes, u32 byteLength
 }
 
 // call cart's update(): run this in your game-loop
-void null0_update_cart() {
+void null0_update() {
   clock_gettime(CLOCK_MONOTONIC_RAW, &nowTime);
   uint64_t delta = ((nowTime.tv_sec - startTime.tv_sec) * 1000000) + ((nowTime.tv_nsec - startTime.tv_nsec) / 1000);
   if (cart_update) {
     null0_check_wasm3(m3_CallV(cart_update, delta));
   }
+}
+
+// call this when you close
+void null0_unload() {
+  if (cart_unload) {
+    null0_check_wasm3(m3_CallV(cart_unload));
+  }
+  pntr_unload_image(canvas);
 }
 
 // given a filename, byte-array and length of cart file, this will load up wasm environment for it
@@ -180,6 +232,7 @@ int null0_load_cart_wasm(char* filename, u8* wasmBuffer, u32 byteLength) {
   m3_LinkRawFunction(module, "env", "null0_log", "v(*)", &null0_log);
   m3_LinkRawFunction(module, "env", "null0_fatal", "v(**ii)", &null0_fatal);
 
+  m3_LinkRawFunction(module, "env", "null0_clear_screen", "v(*)", &null0_clear_screen);
   m3_LinkRawFunction(module, "env", "null0_draw_image", "v(*ii)", &null0_draw_image);
   m3_LinkRawFunction(module, "env", "null0_draw_pixel", "v(ii*)", &null0_draw_pixel);
   m3_LinkRawFunction(module, "env", "null0_draw_rectangle", "v(iiii*)", &null0_draw_rectangle);
@@ -190,10 +243,12 @@ int null0_load_cart_wasm(char* filename, u8* wasmBuffer, u32 byteLength) {
   // EXPORTS (from wasm)
   m3_FindFunction(&cart_load, runtime, "load");
   m3_FindFunction(&cart_update, runtime, "update");
+  m3_FindFunction(&cart_unload, runtime, "unload");
 
   null0_check_wasm3_is_ok();
 
   clock_gettime(CLOCK_MONOTONIC_RAW, &startTime);
+  canvas = pntr_gen_image_color(320, 240, PNTR_BLACK);
 
   if (cart_load) {
     null0_check_wasm3(m3_CallV(cart_load));
