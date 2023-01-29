@@ -23,7 +23,8 @@ export function update(dt:u64): void {
   draw_rectangle(200, 10, 80, 200, BLUE)
   draw_pixel(20, 20, BLUE)
   draw_image(image, 150, 50)
-  draw_circle(20, 20, 20, BLUE)
+
+  draw_circle(40, 40, 20, ORANGE)
 }
 
 export function unload(): void {
