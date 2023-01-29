@@ -64,6 +64,13 @@ export function draw_rectangle(x:i32, y:i32, width:i32, height:i32, color:Color)
   return draw_rectangle_on_image(0, x, y, width, height, color)
 }
 
+// Draw a circle on an image
+@external("env", "null0_draw_circle")
+export declare function draw_circle_on_image(destination: u8, centerX:i32, centerY:i32, radius:i32, color:Color): void
+export function draw_circle(centerX:i32, centerY:i32, radius:i32, color:Color): void {
+  return draw_circle_on_image(0, centerX, centerY, radius, color)
+}
+
 // Draw a pixel on an image
 @external("env", "null0_draw_pixel")
 export declare function draw_pixel_on_image(destination: u8, x:i32, y:i32, color:Color): void

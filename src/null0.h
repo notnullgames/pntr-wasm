@@ -179,6 +179,18 @@ static m3ApiRawFunction(null0_draw_rectangle) {
   m3ApiSuccess();
 }
 
+static m3ApiRawFunction(null0_draw_circle) {
+  m3ApiGetArg(u8, destination);
+  m3ApiGetArg(int, centerX);
+  m3ApiGetArg(int, centerY);
+  m3ApiGetArg(int, radius);
+  m3ApiGetArgMem(pntr_color_t*, color);
+
+  pntr_draw_circle(allImages[destination], centerX, centerY, radius, *color);
+
+  m3ApiSuccess();
+}
+
 static m3ApiRawFunction(null0_load_image) {
   m3ApiReturnType(u8);
   m3ApiGetArgMem(const char*, fileName);
@@ -305,6 +317,7 @@ int null0_load_cart_wasm(char* filename, u8* wasmBuffer, u32 byteLength) {
   m3_LinkRawFunction(module, "env", "null0_draw_image", "v(i*ii)", &null0_draw_image);
   m3_LinkRawFunction(module, "env", "null0_draw_pixel", "v(iii*)", &null0_draw_pixel);
   m3_LinkRawFunction(module, "env", "null0_draw_rectangle", "v(iiiii*)", &null0_draw_rectangle);
+  m3_LinkRawFunction(module, "env", "null0_draw_circle", "v(iiii*)", &null0_draw_circle);
   m3_LinkRawFunction(module, "env", "null0_load_image", "i(*)", &null0_load_image);
   m3_LinkRawFunction(module, "env", "null0_gen_image_color", "i(ii*)", &null0_gen_image_color);
 
