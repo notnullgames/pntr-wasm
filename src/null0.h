@@ -117,6 +117,7 @@ enum Null0CartType null0_get_cart_type(char* filename, u8* bytes, u32 byteLength
       if (bytes[0] == 0 && bytes[1] == 97 && bytes[2] == 115 && bytes[3] == 109) {
         return Null0CartTypeWasm;
       }
+      return Null0CartTypeInvalid;
     }
   } else {
     return Null0CartTypeInvalid;
