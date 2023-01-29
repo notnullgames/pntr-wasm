@@ -1,11 +1,18 @@
 // this is an example game in assemblyscript
 
 let image: u8 = 0
+let ri: u8 = 0
 
 export function load(): void {
-  log("Hello from tester.");
+  log("Hello from tester.")
+
   image = load_image("/image.png")
   log(`Image loaded (${image})`)
+
+  // another way to make a rectangle
+  ri = gen_image_color(20, 20, RED)
+  log(`red image (${ri})`)
+  draw_image_on_image(image, ri, 10, 10)
 }
 
 export function update(dt:u64): void {

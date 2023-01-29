@@ -137,7 +137,8 @@ static m3ApiRawFunction(null0_gen_image_color) {
   m3ApiGetArg(u8, height);
   m3ApiGetArgMem(pntr_color_t*, color);
 
-  allImages[currentImage++] = pntr_gen_image_color(width, height, *color);
+  currentImage++;
+  allImages[currentImage] = pntr_gen_image_color(width, height, *color);
 
   m3ApiReturn(currentImage);
   m3ApiSuccess();
@@ -184,7 +185,6 @@ static m3ApiRawFunction(null0_load_image) {
 
   unsigned int bytesRead = 0;
   unsigned char* fileData = LoadFileDataFromPhysFS(fileName, &bytesRead);
-  printf("Loaded %s: %d\n", fileName, bytesRead);
 
   if (bytesRead) {
     currentImage++;
@@ -306,7 +306,7 @@ int null0_load_cart_wasm(char* filename, u8* wasmBuffer, u32 byteLength) {
   m3_LinkRawFunction(module, "env", "null0_draw_pixel", "v(iii*)", &null0_draw_pixel);
   m3_LinkRawFunction(module, "env", "null0_draw_rectangle", "v(iiiii*)", &null0_draw_rectangle);
   m3_LinkRawFunction(module, "env", "null0_load_image", "i(*)", &null0_load_image);
-  m3_LinkRawFunction(module, "env", "null0_gen_image_color", "i(iii*)", &null0_gen_image_color);
+  m3_LinkRawFunction(module, "env", "null0_gen_image_color", "i(ii*)", &null0_gen_image_color);
 
   null0_check_wasm3_is_ok();
 
